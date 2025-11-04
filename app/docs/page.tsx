@@ -1,395 +1,414 @@
 /**
- * Documentation Page
- * 
- * Professional documentation hub for ContractMind platform.
- * 
- * @module app/docs/page
+ * Documentation Home Page
+ * Modern, comprehensive documentation for ContractMind platform
  */
 
+'use client';
+
+import {
+  Rocket,
+  Code,
+  Book,
+  Zap,
+  Shield,
+  MessageSquare,
+  Brain,
+  Blocks,
+  ChevronRight
+} from 'lucide-react';
 import Link from 'next/link';
-import { FileText, Code, Book, Rocket, Shield, Zap } from 'lucide-react';
+import { DocSection, Callout, FeatureCard, TableOfContents } from '@/components/docs/DocComponents';
+import { CodeBlock, InlineCode } from '@/components/docs/CodeBlock';
 
-export default function DocsPage() {
-    return (
-        <main className="min-h-screen bg-black text-white">
-            {/* Header */}
-            <header className="border-b border-white/10 bg-black/80 backdrop-blur-lg sticky top-0 z-50">
-                <div className="container mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <Link href="/" className="text-xl font-bold hover:text-gray-300 transition-colors">
-                            ← Back to Home
-                        </Link>
-                        <Link
-                            href="/dashboard"
-                            className="px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-                        >
-                            Launch App
-                        </Link>
-                    </div>
+const tocSections = [
+  { id: 'introduction', title: 'Introduction' },
+  { id: 'quick-start', title: 'Quick Start' },
+  { id: 'installation', title: 'Installation' },
+  { id: 'architecture', title: 'Architecture' },
+  { id: 'ai-agents', title: 'AI Agents' },
+  { id: 'smart-contracts', title: 'Smart Contracts' },
+  { id: 'chat-interface', title: 'Chat Interface' },
+  { id: 'frontend', title: 'Frontend Guide' },
+  { id: 'backend', title: 'Backend Guide' },
+  { id: 'contracts', title: 'Contract Development' },
+  { id: 'api', title: 'API Reference' },
+  { id: 'deployment', title: 'Deployment' },
+  { id: 'environment', title: 'Environment Setup' },
+  { id: 'best-practices', title: 'Best Practices' },
+];
+
+export default function DocsHomePage() {
+  return (
+    <div className="relative">
+      {/* Hero Section */}
+      <div className="border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+        <div className="container mx-auto px-6 py-20">
+          <div className="max-w-4xl">
+            {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-sm text-blue-400 mb-6">
+              <Zap className="w-4 h-4" />
+              <span>AI-Powered Blockchain Interaction</span>
+            </div> */}
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+              ContractMind Documentation
+            </h1>
+            <p className="text-xl text-gray-400 mb-8 max-w-3xl">
+              Build intelligent AI agents that interact with smart contracts using natural language.
+              No complex blockchain knowledge required.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/docs/quick-start"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-all"
+              >
+                <Rocket className="w-5 h-5" />
+                Quick Start Guide
+              </Link>
+              <Link
+                href="/docs/architecture"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-lg font-semibold hover:bg-white/10 transition-all"
+              >
+                <Book className="w-5 h-5" />
+                Learn Architecture
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-12">
+        <div className="flex gap-12">
+          {/* Left Content */}
+          <div className="flex-1 max-w-4xl">
+            {/* INTRODUCTION */}
+            <DocSection id="introduction" title="What is ContractMind?" level={1}>
+              <p className="text-gray-300 mb-4">
+                ContractMind is an enterprise-grade platform that enables anyone to interact with blockchain
+                smart contracts through AI-powered agents. Instead of writing code or understanding complex
+                blockchain APIs, you simply chat with an AI agent that handles all the technical complexity for you.
+              </p>
+              <p className="text-gray-300 mb-4">
+                The platform combines three core technologies:
+              </p>
+              <ul className="space-y-2 text-gray-300 ml-6">
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span><strong>AI Language Models</strong> - Understands your intent and translates it to blockchain actions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span><strong>Smart Contracts</strong> - Manages permissions and agent authorization on-chain</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span><strong>Web3 Interface</strong> - Beautiful, intuitive UI for wallet connection and agent management</span>
+                </li>
+              </ul>
+
+              <div className="grid md:grid-cols-2 gap-4 my-8">
+                <FeatureCard
+                  icon={<Brain className="w-6 h-6 text-white" />}
+                  title="Natural Language AI"
+                  description="Chat with smart contracts using plain English. No coding required."
+                />
+                <FeatureCard
+                  icon={<Shield className="w-6 h-6 text-white" />}
+                  title="Function Authorization"
+                  description="Granular control over which functions agents can access and execute."
+                />
+                <FeatureCard
+                  icon={<Zap className="w-6 h-6 text-white" />}
+                  title="Real-Time Execution"
+                  description="Instant transaction preparation with gas estimates and previews."
+                />
+                <FeatureCard
+                  icon={<MessageSquare className="w-6 h-6 text-white" />}
+                  title="Context-Aware Chat"
+                  description="AI understands your contract's ABI and provides relevant suggestions."
+                />
+              </div>
+            </DocSection>
+
+            {/* QUICK START */}
+            <DocSection id="quick-start" title="Quick Start" level={1}>
+              <p className="text-gray-300 mb-6">
+                Get ContractMind up and running in just a few minutes with this step-by-step guide.
+              </p>
+
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-bold">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-white mb-2">Create an Agent</h4>
+                    <p className="text-gray-400 text-sm mb-3">
+                      Connect a smart contract by providing its address and ABI. The platform automatically
+                      parses all available functions.
+                    </p>
+                    <CodeBlock
+                      code={`// Example: Create agent for a staking contract
+Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+Contract: ERC20 Token with Staking
+Functions: stake(), unstake(), getRewards(), balanceOf()`}
+                      language="text"
+                    />
+                  </div>
                 </div>
-            </header>
 
-            {/* Hero Section */}
-            <section className="border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-                <div className="container mx-auto px-6 py-20">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                            Documentation
-                        </h1>
-                        <p className="text-xl text-gray-400 mb-8">
-                            Complete technical documentation for the ContractMind infrastructure platform.
-                            Build, deploy, and manage AI-powered blockchain agents with enterprise-grade reliability.
-                        </p>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-bold">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-white mb-2">Authorize Functions</h4>
+                    <p className="text-gray-400 text-sm mb-3">
+                      Choose which contract functions the AI agent can access. This provides granular
+                      security control.
+                    </p>
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                      <p className="text-sm text-gray-300 mb-2">Authorized Functions:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {['stake()', 'unstake()', 'balanceOf()', 'getRewards()'].map(func => (
+                          <span key={func} className="px-3 py-1 bg-white/10 border border-white/20 rounded-lg text-sm text-white">
+                            {func}
+                          </span>
+                        ))}
+                      </div>
                     </div>
+                  </div>
                 </div>
-            </section>
 
-            {/* Documentation Sections */}
-            <section className="py-20">
-                <div className="container mx-auto px-6">
-                    <div className="max-w-6xl mx-auto">
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                            {/* Getting Started */}
-                            <Link href="/docs/quick-start">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Rocket className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Getting Started</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Quick start guide to deploy your first AI agent in minutes
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Installation
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Environment Setup
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            First Agent Deployment
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Wallet Configuration
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* Installation Guide */}
-                            <Link href="/docs/installation">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <FileText className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Installation Guide</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Complete installation instructions for all platforms and environments
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            System Requirements
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Step-by-Step Setup
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Database Configuration
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Troubleshooting
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* Deployment Guide */}
-                            {/* Deployment Guide */}
-                            <Link href="/docs/deployment">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Shield className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Deployment Guide</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Production deployment strategies for Docker, AWS, Vercel, and more
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Docker Deployment
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Cloud Platforms
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            CI/CD Setup
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Security Best Practices
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>              {/* Architecture */}
-                            <Link href="/docs/architecture">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Code className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Architecture</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        System design, component structure, and technical decisions
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            System Overview
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Component Architecture
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Data Flow
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Security Architecture
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* API Reference */}
-                            <Link href="/docs/api">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <FileText className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">API Reference</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Complete API documentation with endpoints and examples
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Authentication
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Agents API
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Chat API
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Analytics API
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* Smart Contracts */}
-                            <Link href="/docs/contracts">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Shield className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Smart Contracts</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Solidity contracts, deployment guides, and security practices
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Contract Overview
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Hub-Aware Architecture
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Deployment Guide
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Security Patterns
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* Frontend Guide */}
-                            <Link href="/docs/frontend">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Zap className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Frontend Integration</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        Next.js application structure and Web3 integration patterns
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Project Structure
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Web3 Provider Setup
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Component Library
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Authentication
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                            {/* Backend Guide */}
-                            <Link href="/docs/backend">
-                                <div className="p-6 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/20 h-full flex flex-col">
-                                    <div className="text-white mb-4">
-                                        <Book className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Backend Services</h3>
-                                    <p className="text-gray-400 text-sm mb-4 flex-grow">
-                                        FastAPI backend, AI integration, and database management
-                                    </p>
-                                    <ul className="space-y-2">
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Service Architecture
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            AI Model Integration
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            Database Schema
-                                        </li>
-                                        <li className="text-sm text-gray-500 flex items-start">
-                                            <span className="mr-2">•</span>
-                                            WebSocket Services
-                                        </li>
-                                    </ul>
-                                </div>
-                            </Link>
-
-                        </div>
-
-                        {/* Quick Links */}
-                        <div className="mt-20 grid md:grid-cols-2 gap-6">
-                            <div className="p-8 rounded-lg border border-white/10 bg-white/5">
-                                <h3 className="text-2xl font-bold mb-4">Quick Links</h3>
-                                <ul className="space-y-3">
-                                    <li>
-                                        <a href="https://github.com/your-org/ContractMindInfra" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-                                            → GitHub Repository
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                                            → Launch Dashboard
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-                                            → API Documentation (Swagger)
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://discord.gg/contractmind" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-                                            → Community Discord
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://faucet.somnia.network" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-                                            → Somnia Testnet Faucet
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div className="p-8 rounded-lg border border-white/10 bg-white/5">
-                                <h3 className="text-2xl font-bold mb-4">Resources</h3>
-                                <ul className="space-y-3">
-                                    <li className="text-gray-400">
-                                        <span className="font-semibold text-white">Frontend:</span> Next.js 14, TypeScript, Wagmi, Reown AppKit
-                                    </li>
-                                    <li className="text-gray-400">
-                                        <span className="font-semibold text-white">Backend:</span> Python 3.11+, FastAPI, PostgreSQL
-                                    </li>
-                                    <li className="text-gray-400">
-                                        <span className="font-semibold text-white">Contracts:</span> Solidity ^0.8.0, Foundry
-                                    </li>
-                                    <li className="text-gray-400">
-                                        <span className="font-semibold text-white">Network:</span> Somnia Testnet (Chain ID: 50312)
-                                    </li>
-                                    <li className="text-gray-400">
-                                        <span className="font-semibold text-white">AI Models:</span> OpenAI, Anthropic Claude, Google Gemini
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Prerequisites */}
-                        <div className="mt-12 p-8 rounded-lg border border-white/10 bg-gradient-to-r from-white/5 to-white/0">
-                            <h3 className="text-2xl font-bold mb-4">Prerequisites</h3>
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div>
-                                    <h4 className="font-semibold mb-2 text-white">Development</h4>
-                                    <ul className="text-sm text-gray-400 space-y-1">
-                                        <li>Node.js ≥ 18.0.0</li>
-                                        <li>Python ≥ 3.11</li>
-                                        <li>PostgreSQL ≥ 14</li>
-                                        <li>Git</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold mb-2 text-white">Blockchain</h4>
-                                    <ul className="text-sm text-gray-400 space-y-1">
-                                        <li>Web3 Wallet (MetaMask)</li>
-                                        <li>Somnia Testnet Access</li>
-                                        <li>Test SOMI Tokens</li>
-                                        <li>WalletConnect Project ID</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold mb-2 text-white">API Keys</h4>
-                                    <ul className="text-sm text-gray-400 space-y-1">
-                                        <li>OpenAI API Key</li>
-                                        <li>Anthropic API Key</li>
-                                        <li>Google Gemini API Key</li>
-                                        <li>Database Credentials</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-bold">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-white mb-2">Chat & Interact</h4>
+                    <p className="text-gray-400 text-sm">
+                      Use natural language to interact with the contract. The AI prepares transactions automatically.
+                    </p>
+                  </div>
                 </div>
-            </section>
-        </main>
-    );
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-bold">
+                    4
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-white mb-2">Execute with Wallet</h4>
+                    <p className="text-gray-400 text-sm">
+                      Review and confirm transactions in your Web3 wallet. Full transparency and security.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </DocSection>
+
+            {/* INSTALLATION */}
+            <DocSection id="installation" title="Installation" level={1}>
+              <p className="text-gray-300 mb-4">
+                Set up your development environment to work with ContractMind.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mb-3">Prerequisites</h3>
+              <ul className="space-y-2 text-gray-300 ml-6 mb-6">
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span>Node.js 18+ and npm</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span>Python 3.11+ and Poetry</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span>PostgreSQL 14+</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span>Foundry (for smart contracts)</span>
+                </li>
+              </ul>
+
+              <CodeBlock
+                filename="Clone Repository"
+                code={`git clone <repository-url>
+cd ContractMindInfra
+
+# Install Frontend
+cd frontend
+npm install
+
+# Install Backend
+cd ../backend
+poetry install
+
+# Install Smart Contracts
+cd ../contracts
+forge install`}
+                language="bash"
+              />
+            </DocSection>
+
+            {/* ARCHITECTURE */}
+            <DocSection id="architecture" title="Architecture" level={1}>
+              <p className="text-gray-300 mb-6">
+                ContractMind consists of three main components working together to provide a seamless experience.
+              </p>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-5">
+                  <h4 className="font-semibold text-white mb-2">Frontend (Next.js)</h4>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Modern React application built with Next.js 14, TypeScript, and Tailwind CSS. Handles wallet
+                    connections, agent management, and chat interface.
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Technologies: Next.js, TypeScript, Wagmi, Viem, Framer Motion
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-5">
+                  <h4 className="font-semibold text-white mb-2">Backend (FastAPI)</h4>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Python-based API server handling AI orchestration, database management, and blockchain
+                    interactions. Integrates with OpenAI, Anthropic Claude, and Google Gemini.
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Technologies: FastAPI, PostgreSQL, SQLAlchemy, Web3.py
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-5">
+                  <h4 className="font-semibold text-white mb-2">Smart Contracts (Solidity)</h4>
+                  <p className="text-sm text-gray-400 mb-3">
+                    On-chain permission management and agent registry. Deployed on Somnia Testnet with
+                    Foundry for development and testing.
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Technologies: Solidity, Foundry, OpenZeppelin
+                  </div>
+                </div>
+              </div>
+            </DocSection>
+
+            {/* AI AGENTS */}
+            <DocSection id="ai-agents" title="AI Agents" level={1}>
+              <p className="text-gray-300 mb-4">
+                AI agents are the core of ContractMind, translating natural language into smart contract interactions.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Detailed documentation on AI agent architecture and customization.</p>
+              </div>
+            </DocSection>
+
+            {/* SMART CONTRACTS */}
+            <DocSection id="smart-contracts" title="Smart Contracts" level={1}>
+              <p className="text-gray-300 mb-4">
+                Learn about the on-chain components that power ContractMind's permission system.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Smart contract API reference and deployment guides.</p>
+              </div>
+            </DocSection>
+
+            {/* CHAT INTERFACE */}
+            <DocSection id="chat-interface" title="Chat Interface" level={1}>
+              <p className="text-gray-300 mb-4">
+                Interact with smart contracts using natural language through the intuitive chat interface.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Chat interface features, commands, and best practices.</p>
+              </div>
+            </DocSection>
+
+            {/* FRONTEND */}
+            <DocSection id="frontend" title="Frontend Development" level={1}>
+              <p className="text-gray-300 mb-4">
+                Build and customize the ContractMind frontend application.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Frontend architecture, components, and customization guides.</p>
+              </div>
+            </DocSection>
+
+            {/* BACKEND */}
+            <DocSection id="backend" title="Backend Development" level={1}>
+              <p className="text-gray-300 mb-4">
+                Understand the backend architecture and API implementation.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Backend services, database schema, and AI integration.</p>
+              </div>
+            </DocSection>
+
+            {/* CONTRACTS */}
+            <DocSection id="contracts" title="Contract Development" level={1}>
+              <p className="text-gray-300 mb-4">
+                Develop and test Solidity smart contracts for ContractMind.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Smart contract development, testing, and deployment.</p>
+              </div>
+            </DocSection>
+
+            {/* API */}
+            <DocSection id="api" title="API Reference" level={1}>
+              <p className="text-gray-300 mb-4">
+                Complete API documentation for integrating with ContractMind.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">REST API endpoints, WebSocket events, and authentication.</p>
+              </div>
+            </DocSection>
+
+            {/* DEPLOYMENT */}
+            <DocSection id="deployment" title="Deployment" level={1}>
+              <p className="text-gray-300 mb-4">
+                Deploy ContractMind to production environments.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Production deployment guides for all components.</p>
+              </div>
+            </DocSection>
+
+            {/* ENVIRONMENT */}
+            <DocSection id="environment" title="Environment Setup" level={1}>
+              <p className="text-gray-300 mb-4">
+                Configure environment variables and system requirements.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Environment configuration and system requirements.</p>
+              </div>
+            </DocSection>
+
+            {/* BEST PRACTICES */}
+            <DocSection id="best-practices" title="Best Practices" level={1}>
+              <p className="text-gray-300 mb-4">
+                Learn best practices for building with ContractMind.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center text-gray-400 my-6">
+                <p className="text-lg font-semibold text-white mb-2">Coming Soon</p>
+                <p className="text-sm">Security, performance, and development best practices.</p>
+              </div>
+            </DocSection>
+          </div>
+          {/* Right Sidebar - Table of Contents */}
+          <div className="hidden xl:block w-64">
+            <TableOfContents sections={tocSections} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
