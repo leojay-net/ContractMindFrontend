@@ -13,13 +13,10 @@ import {
     Bot,
     User,
     Loader2,
-    CheckCircle,
     XCircle,
     AlertCircle,
-    ExternalLink,
     ChevronDown,
     Sparkles,
-    Clock,
     Info,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -400,7 +397,7 @@ export default function ChatPage() {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            agentId: selectedAgent.id,
+                            agentId: selectedAgent?.id,
                             txHash: hash,
                             userAddress: address,
                             functionName: functionName,
@@ -526,13 +523,18 @@ export default function ChatPage() {
             <div className="p-6 border-b border-white/10 bg-black/40 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-                            <MessageSquare className="w-6 h-6 text-white" />
+                        <div className="relative w-12 h-12">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl" />
+                            <div className="absolute inset-[2px] bg-black/80 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/10">
+                                <MessageSquare className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+                            </div>
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-white">AI Chat</h1>
+                            <h1 className="text-2xl font-bold text-white">
+                                {selectedAgent ? selectedAgent.name : 'AI Chat'}
+                            </h1>
                             <p className="text-sm text-gray-400">
-                                Natural language interface for smart contract interactions
+                                {selectedAgent ? selectedAgent.description : 'Natural language interface for smart contract interactions'}
                             </p>
                         </div>
                     </div>

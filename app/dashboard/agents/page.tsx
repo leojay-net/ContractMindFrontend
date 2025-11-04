@@ -219,8 +219,11 @@ export default function AgentsPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl flex-shrink-0">
-                    <Bot className="w-6 h-6 text-white" />
+                  <div className="relative w-12 h-12 flex-shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl" />
+                    <div className="absolute inset-[2px] bg-black/80 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/10">
+                      <Bot className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">

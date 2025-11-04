@@ -595,7 +595,7 @@ export default function AnalyticsPage() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                            className="bg-zinc-900 border border-white/10 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between mb-6">
@@ -611,11 +611,11 @@ export default function AnalyticsPage() {
                             {/* Status Badge */}
                             <div className="mb-6">
                                 <span
-                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${selectedTransaction.status === 'completed' || selectedTransaction.status === 'success'
-                                            ? 'bg-green-500/20 text-green-400'
-                                            : selectedTransaction.status === 'failed'
-                                                ? 'bg-red-500/20 text-red-400'
-                                                : 'bg-yellow-500/20 text-yellow-400'
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border ${selectedTransaction.status === 'completed' || selectedTransaction.status === 'success'
+                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                        : selectedTransaction.status === 'failed'
+                                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                                         }`}
                                 >
                                     {selectedTransaction.status === 'completed' || selectedTransaction.status === 'success' ? (
@@ -632,14 +632,14 @@ export default function AnalyticsPage() {
                             {/* Transaction Info */}
                             <div className="space-y-4">
                                 {/* Transaction Hash */}
-                                <div className="p-4 bg-white/5 rounded-lg">
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
                                     <div className="flex items-center justify-between mb-2">
                                         <label className="text-sm text-gray-400">Transaction Hash</label>
                                         <a
                                             href={`https://explorer.somnia.network/tx/${selectedTransaction.txHash}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                                            className="text-white hover:text-gray-300 text-sm flex items-center gap-1 font-medium"
                                         >
                                             View on Explorer
                                             <ExternalLink className="w-3 h-3" />
@@ -651,7 +651,7 @@ export default function AnalyticsPage() {
                                 </div>
 
                                 {/* Function Name */}
-                                <div className="p-4 bg-white/5 rounded-lg">
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
                                     <label className="text-sm text-gray-400 block mb-2">Function</label>
                                     <p className="text-white font-medium">
                                         {selectedTransaction.functionName || 'N/A'}
@@ -659,7 +659,7 @@ export default function AnalyticsPage() {
                                 </div>
 
                                 {/* User Address */}
-                                <div className="p-4 bg-white/5 rounded-lg">
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
                                     <label className="text-sm text-gray-400 block mb-2">User Address</label>
                                     <p className="text-white font-mono text-sm break-all">
                                         {selectedTransaction.userAddress}
@@ -668,7 +668,7 @@ export default function AnalyticsPage() {
 
                                 {/* Block Number */}
                                 {selectedTransaction.blockNumber && (
-                                    <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
                                         <label className="text-sm text-gray-400 block mb-2">Block Number</label>
                                         <p className="text-white font-medium">
                                             {selectedTransaction.blockNumber.toLocaleString()}
@@ -678,7 +678,7 @@ export default function AnalyticsPage() {
 
                                 {/* Gas Used */}
                                 {selectedTransaction.gasUsed && (
-                                    <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
                                         <label className="text-sm text-gray-400 block mb-2">Gas Used</label>
                                         <p className="text-white font-medium">
                                             {selectedTransaction.gasUsed.toLocaleString()} gas units
@@ -688,7 +688,7 @@ export default function AnalyticsPage() {
 
                                 {/* Timestamps */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
                                         <label className="text-sm text-gray-400 block mb-2">Created At</label>
                                         <p className="text-white text-sm">
                                             {selectedTransaction.createdAt
@@ -696,7 +696,7 @@ export default function AnalyticsPage() {
                                                 : 'N/A'}
                                         </p>
                                     </div>
-                                    <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
                                         <label className="text-sm text-gray-400 block mb-2">Confirmed At</label>
                                         <p className="text-white text-sm">
                                             {selectedTransaction.confirmedAt
@@ -708,7 +708,7 @@ export default function AnalyticsPage() {
 
                                 {/* Agent ID */}
                                 {selectedTransaction.agentId && (
-                                    <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
                                         <label className="text-sm text-gray-400 block mb-2">Agent ID</label>
                                         <p className="text-white font-mono text-sm">
                                             {selectedTransaction.agentId}
@@ -718,10 +718,10 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Close Button */}
-                            <div className="mt-6 flex justify-end">
+                            <div className="mt-6 flex justify-end gap-3">
                                 <button
                                     onClick={() => setShowTxModal(false)}
-                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                                    className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-medium rounded-lg transition-colors"
                                 >
                                     Close
                                 </button>

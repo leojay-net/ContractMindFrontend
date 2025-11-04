@@ -72,6 +72,7 @@ class ApiClient {
         targetContract: string;
         name: string;
         configIPFS: string;
+        abi?: any[]; // Optional ABI for the target contract
     }): Promise<{
         success: boolean;
         requiresTransaction: boolean;
@@ -306,6 +307,7 @@ class MockApiClient {
         targetContract: string;
         name: string;
         configIPFS: string;
+        abi?: any[]; // Optional ABI for the target contract
     }): Promise<{
         success: boolean;
         requiresTransaction: boolean;

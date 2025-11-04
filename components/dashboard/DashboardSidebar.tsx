@@ -14,19 +14,17 @@ import {
     MessageSquare,
     BarChart3,
     Settings,
-    FileText,
-    Zap,
     X,
     Menu,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LogoMark } from '@/components/ui/Logo';
 
 const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Agents', href: '/dashboard/agents', icon: Bot },
     { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Documentation', href: '/dashboard/docs', icon: FileText },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
@@ -92,10 +90,8 @@ function SidebarContent({ pathname, onClose }: SidebarContentProps) {
         <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-black" />
-                    </div>
+                <Link href="/" className="flex items-center gap-3">
+                    <LogoMark size={32} />
                     <span className="text-white font-semibold text-lg">ContractMind</span>
                 </Link>
 

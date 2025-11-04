@@ -14,10 +14,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Cpu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { NAV_ITEMS } from '@/lib/config';
 import { toast } from 'react-hot-toast';
+import { LogoMark } from '@/components/ui/Logo';
 
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -61,10 +62,8 @@ export default function Header() {
             <nav className="container mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                            <Cpu className="w-6 h-6 text-black" />
-                        </div>
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <LogoMark size={40} className="group-hover:scale-105 transition-transform" />
                         <span className="text-xl font-bold text-white">ContractMind</span>
                     </Link>
 
@@ -92,8 +91,8 @@ export default function Header() {
                             href="/dashboard"
                             onClick={handleLaunchApp}
                             className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer flex items-center gap-2 ${isConnected
-                                    ? 'bg-white hover:bg-gray-100 text-black'
-                                    : 'bg-white/10 text-white/50 cursor-not-allowed border border-white/20'
+                                ? 'bg-white hover:bg-gray-100 text-black'
+                                : 'bg-white/10 text-white/50 cursor-not-allowed border border-white/20'
                                 }`}
                         >
                             Launch App
@@ -155,8 +154,8 @@ export default function Header() {
                                         setIsMobileMenuOpen(false);
                                     }}
                                     className={`block w-full px-6 py-2 rounded-lg font-semibold transition-all duration-200 text-center cursor-pointer flex items-center justify-center gap-2 ${isConnected
-                                            ? 'bg-white hover:bg-gray-100 text-black'
-                                            : 'bg-white/10 text-white/50 cursor-not-allowed border border-white/20'
+                                        ? 'bg-white hover:bg-gray-100 text-black'
+                                        : 'bg-white/10 text-white/50 cursor-not-allowed border border-white/20'
                                         }`}
                                 >
                                     Launch App

@@ -141,7 +141,7 @@ export default function CreateAgentPage() {
                 targetContract: formData.targetContract,
                 name: formData.name,
                 configIPFS,
-                abi: parsedAbi,
+                abi: parsedAbi, // Include ABI for agent functionality
             });
 
             if (!prepareResult.success || !prepareResult.requiresTransaction) {

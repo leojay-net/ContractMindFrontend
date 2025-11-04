@@ -5,7 +5,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Cpu, Github, Twitter, MessageCircle } from 'lucide-react';
+import { Github, Twitter, MessageCircle } from 'lucide-react';
+import { LogoMark } from '@/components/ui/Logo';
 
 const footerSections = [
     {
@@ -53,10 +54,8 @@ export default function Footer() {
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
                     {/* Brand Column */}
                     <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                <Cpu className="w-6 h-6 text-black" />
-                            </div>
+                        <Link href="/" className="flex items-center gap-3 mb-4">
+                            <LogoMark size={40} />
                             <span className="text-xl font-bold text-white">
                                 ContractMind
                             </span>

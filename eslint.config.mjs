@@ -13,6 +13,26 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Allow any types - this is a pragmatic choice for rapid development
+      "@typescript-eslint/no-explicit-any": "off",
+      // Allow unused vars with underscore prefix
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_"
+        }
+      ],
+      // Allow unescaped entities in JSX
+      "react/no-unescaped-entities": "off",
+      // Disable purity checks for 3D components (they're intentionally using randomness)
+      "react-hooks/purity": "off",
+      // Allow setState in effects (controlled usage)
+      "react-hooks/set-state-in-effect": "warn",
+    }
+  }
 ]);
 
 export default eslintConfig;

@@ -6,23 +6,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bot,
     MessageSquare,
-    BarChart3,
-    FileText,
-    TrendingUp,
-    Users,
     Zap,
     Activity,
     CheckCircle,
     XCircle,
     ArrowUpRight,
-    Loader2,
     Plus,
     Clock,
     AlertCircle,
+    ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
@@ -30,7 +26,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 
 export default function DashboardPage() {
-    const { isLoading, withLoading } = useLoading();
+    const { isLoading } = useLoading();
     const toast = useToast();
 
     const [stats, setStats] = useState([
@@ -42,6 +38,9 @@ export default function DashboardPage() {
 
     const [recentAgents, setRecentAgents] = useState<any[]>([]);
     const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+    const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+    const [showTxModal, setShowTxModal] = useState(false);
+    const [_agentsMap, _setAgentsMap] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -51,6 +50,13 @@ export default function DashboardPage() {
                     apiClient.getAgents().catch(() => []),
                     apiClient.getTransactionHistory(undefined, 3).catch(() => []),
                 ]);
+
+                // Create agent ID to name mapping
+                const agentMap: Record<string, string> = {};
+                agents.forEach((agent: any) => {
+                    agentMap[agent.id] = agent.name;
+                });
+                _setAgentsMap(agentMap);
 
                 // Update stats
                 setStats([
@@ -63,21 +69,21 @@ export default function DashboardPage() {
                     },
                     {
                         label: 'Interactions',
-                        value: analytics.totalCalls?.toLocaleString() || '0',
+                        value: analytics.totalTransactions?.toLocaleString() || '0',
                         change: `+${analytics.callsGrowthPercent || 0}% from last month`,
                         icon: Activity,
                         trend: 'up' as const
                     },
                     {
                         label: 'Success Rate',
-                        value: `${analytics.successRate || 0}%`,
+                        value: `${((analytics.successRate || 0) * 100).toFixed(1)}%`,
                         change: `+${analytics.successRateGrowth || 0}% from last month`,
                         icon: CheckCircle,
                         trend: 'up' as const
                     },
                     {
                         label: 'Gas Saved',
-                        value: `${analytics.totalGasUsed || '0'} ETH`,
+                        value: `${(analytics.totalGasUsed || 0).toLocaleString()} ETH`,
                         change: `+${analytics.gasGrowth || '0'} ETH this week`,
                         icon: Zap,
                         trend: 'up' as const
@@ -100,12 +106,19 @@ export default function DashboardPage() {
 
                 // Update recent transactions
                 setRecentTransactions((Array.isArray(transactions) ? transactions : []).slice(0, 3).map((tx: any) => ({
-                    id: tx.hash || tx.id || `tx-${crypto.randomUUID()}`,
-                    type: tx.functionName || tx.type || 'Transaction',
-                    agent: tx.agentId || tx.agent || 'Unknown',
-                    status: tx.success ? 'success' : 'failed',
-                    hash: tx.hash || tx.txHash || `0x${Math.random().toString(16).slice(2)}`,
-                    time: tx.timestamp || new Date().toISOString(),
+                    ...tx,
+                    id: tx.id || tx.txHash || `tx-${crypto.randomUUID()}`,
+                    type: tx.functionName || 'Transaction',
+                    agentName: agentMap[tx.agentId] || tx.agentId || 'Unknown Agent',
+                    status: tx.status === 'confirmed' || tx.status === 'success' ? 'success' : tx.status === 'pending' ? 'pending' : 'failed',
+                    txHash: tx.txHash || `0x${Math.random().toString(16).slice(2)}`,
+                    action: tx.functionName || 'Unknown',
+                    time: tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Unknown time',
                 })));
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
@@ -190,8 +203,11 @@ export default function DashboardPage() {
                                 className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                                        <Bot className="w-5 h-5 text-white" />
+                                    <div className="relative w-10 h-10">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg" />
+                                        <div className="absolute inset-[2px] bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
+                                            <Bot className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+                                        </div>
                                     </div>
                                     <div>
                                         <p className="font-semibold text-white group-hover:text-gray-100">{agent.name}</p>
@@ -237,49 +253,55 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="divide-y divide-white/5">
-                        {recentTransactions.map((tx) => (
-                            <div
-                                key={tx.id}
-                                className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tx.status === 'success'
-                                        ? 'bg-green-500/20'
-                                        : tx.status === 'pending'
-                                            ? 'bg-yellow-500/20'
-                                            : 'bg-red-500/20'
-                                        }`}>
-                                        {tx.status === 'success' ? (
-                                            <CheckCircle className="w-5 h-5 text-green-400" />
-                                        ) : tx.status === 'pending' ? (
-                                            <Clock className="w-5 h-5 text-yellow-400" />
-                                        ) : (
-                                            <AlertCircle className="w-5 h-5 text-red-400" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-white">{tx.agent}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs text-gray-500">{tx.action}</span>
-                                            <span className="text-xs text-gray-600">·</span>
-                                            <a
-                                                href={`https://testnet-explorer.somnia.network/tx/${tx.txHash}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs text-blue-400 hover:text-blue-300 font-mono"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                {tx.txHash}
-                                            </a>
+                        {recentTransactions.length > 0 ? (
+                            recentTransactions.map((tx) => (
+                                <div
+                                    key={tx.id}
+                                    onClick={() => {
+                                        setSelectedTransaction(tx);
+                                        setShowTxModal(true);
+                                    }}
+                                    className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tx.status === 'success'
+                                            ? 'bg-green-500/20'
+                                            : tx.status === 'pending'
+                                                ? 'bg-yellow-500/20'
+                                                : 'bg-red-500/20'
+                                            }`}>
+                                            {tx.status === 'success' ? (
+                                                <CheckCircle className="w-5 h-5 text-green-400" />
+                                            ) : tx.status === 'pending' ? (
+                                                <Clock className="w-5 h-5 text-yellow-400" />
+                                            ) : (
+                                                <AlertCircle className="w-5 h-5 text-red-400" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">{tx.agentName}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs text-gray-500">{tx.action}</span>
+                                                <span className="text-xs text-gray-600">·</span>
+                                                <span className="text-xs text-gray-400 font-mono">
+                                                    {tx.txHash?.slice(0, 10)}...
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="text-right">
-                                    <p className="text-xs text-gray-500">{tx.time}</p>
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-500">{tx.time}</p>
+                                    </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="p-12 text-center">
+                                <Activity className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                                <p className="text-gray-400">No recent transactions</p>
+                                <p className="text-sm text-gray-500 mt-2">Activity will appear here</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </motion.div>
             </div>
@@ -346,6 +368,167 @@ export default function DashboardPage() {
                     </Link>
                 </div>
             </motion.div>
+
+            {/* Transaction Detail Modal */}
+            <AnimatePresence>
+                {showTxModal && selectedTransaction && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowTxModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-zinc-900 border border-white/10 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-white">Transaction Details</h2>
+                                <button
+                                    onClick={() => setShowTxModal(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <XCircle className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="mb-6">
+                                <span
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border ${selectedTransaction.status === 'success'
+                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                        : selectedTransaction.status === 'failed'
+                                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                        }`}
+                                >
+                                    {selectedTransaction.status === 'success' ? (
+                                        <CheckCircle className="w-4 h-4" />
+                                    ) : selectedTransaction.status === 'failed' ? (
+                                        <XCircle className="w-4 h-4" />
+                                    ) : (
+                                        <Clock className="w-4 h-4" />
+                                    )}
+                                    {selectedTransaction.status.charAt(0).toUpperCase() + selectedTransaction.status.slice(1)}
+                                </span>
+                            </div>
+
+                            {/* Transaction Info */}
+                            <div className="space-y-4">
+                                {/* Transaction Hash */}
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-sm text-gray-400">Transaction Hash</label>
+                                        <a
+                                            href={`https://explorer.somnia.network/tx/${selectedTransaction.txHash}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-white hover:text-gray-300 text-sm flex items-center gap-1 font-medium"
+                                        >
+                                            View on Explorer
+                                            <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                    </div>
+                                    <p className="text-white font-mono text-sm break-all">
+                                        {selectedTransaction.txHash}
+                                    </p>
+                                </div>
+
+                                {/* Agent Name */}
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                    <label className="text-sm text-gray-400 block mb-2">Agent</label>
+                                    <p className="text-white font-medium">
+                                        {selectedTransaction.agentName}
+                                    </p>
+                                </div>
+
+                                {/* Function Name */}
+                                <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                    <label className="text-sm text-gray-400 block mb-2">Function</label>
+                                    <p className="text-white font-medium">
+                                        {selectedTransaction.functionName || selectedTransaction.action || 'N/A'}
+                                    </p>
+                                </div>
+
+                                {/* User Address */}
+                                {selectedTransaction.userAddress && (
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">User Address</label>
+                                        <p className="text-white font-mono text-sm break-all">
+                                            {selectedTransaction.userAddress}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Block Number */}
+                                {selectedTransaction.blockNumber && (
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Block Number</label>
+                                        <p className="text-white font-medium">
+                                            {selectedTransaction.blockNumber.toLocaleString()}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Gas Used */}
+                                {selectedTransaction.gasUsed && (
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Gas Used</label>
+                                        <p className="text-white font-medium">
+                                            {selectedTransaction.gasUsed.toLocaleString()} gas units
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Timestamps */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Created At</label>
+                                        <p className="text-white text-sm">
+                                            {selectedTransaction.createdAt
+                                                ? new Date(selectedTransaction.createdAt).toLocaleString()
+                                                : selectedTransaction.time || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Confirmed At</label>
+                                        <p className="text-white text-sm">
+                                            {selectedTransaction.confirmedAt
+                                                ? new Date(selectedTransaction.confirmedAt).toLocaleString()
+                                                : 'Pending'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Agent ID */}
+                                {selectedTransaction.agentId && (
+                                    <div className="p-4 bg-black border border-white/10 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Agent ID</label>
+                                        <p className="text-white font-mono text-sm break-all">
+                                            {selectedTransaction.agentId}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Close Button */}
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowTxModal(false)}
+                                    className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-medium rounded-lg transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
