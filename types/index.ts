@@ -39,6 +39,7 @@ export interface Agent {
     owner: string; // address
     targetContract: string; // address
     name: string;
+    description?: string; // Optional description
     configIPFS: string;
     active: boolean;
     createdAt: string; // ISO timestamp

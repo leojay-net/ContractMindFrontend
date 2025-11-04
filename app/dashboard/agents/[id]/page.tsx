@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bot,
     MessageSquare,
@@ -47,6 +47,8 @@ export default function AgentDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'functions' | 'transactions'>('overview');
     const [showMenu, setShowMenu] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', description: '' });
 
     const agentId = params.id as string;
 
@@ -153,6 +155,34 @@ export default function AgentDetailPage() {
         }
     };
 
+    const handleEditAgent = () => {
+        if (!agent) return;
+        setEditForm({
+            name: agent.name || '',
+            description: agent.description || '',
+        });
+        setShowEditModal(true);
+        setShowMenu(false);
+    };
+
+    const handleUpdateAgent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!agent) return;
+
+        try {
+            await apiClient.updateAgent(agentId, editForm);
+            toast.success('Agent updated successfully');
+
+            // Refresh agent data
+            const updatedAgent = await apiClient.getAgent(agentId);
+            setAgent(updatedAgent);
+            setShowEditModal(false);
+        } catch (error: any) {
+            console.error('Error updating agent:', error);
+            toast.error(error.message || 'Failed to update agent');
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -221,8 +251,15 @@ export default function AgentDetailPage() {
                                     className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl z-10"
                                 >
                                     <button
-                                        onClick={handleToggleStatus}
+                                        onClick={handleEditAgent}
                                         className="w-full flex items-center gap-2 px-4 py-2.5 text-white hover:bg-white/10 transition-all"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        Edit Agent
+                                    </button>
+                                    <button
+                                        onClick={handleToggleStatus}
+                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-white hover:bg-white/10 transition-all border-t border-white/10"
                                     >
                                         <Power className="w-4 h-4" />
                                         {agent.active ? 'Deactivate' : 'Activate'} Agent
@@ -294,7 +331,7 @@ export default function AgentDetailPage() {
                         <CheckCircle className="w-5 h-5 text-green-400" />
                     </div>
                     <p className="text-3xl font-bold text-white mb-1">
-                        {analytics?.successRate?.toFixed(1) || '0'}%
+                        {analytics?.successRate ? (analytics.successRate * 100).toFixed(1) : '0'}%
                     </p>
                     <p className="text-xs text-gray-500">Average</p>
                 </motion.div>
@@ -310,9 +347,9 @@ export default function AgentDetailPage() {
                         <Zap className="w-5 h-5 text-yellow-400" />
                     </div>
                     <p className="text-3xl font-bold text-white mb-1">
-                        {analytics?.totalGasUsed || '0'} SOMI
+                        {(analytics?.totalGasUsed || 0).toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">Total</p>
+                    <p className="text-xs text-gray-500">Total gas units</p>
                 </motion.div>
 
                 <motion.div
@@ -368,11 +405,11 @@ export default function AgentDetailPage() {
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400">Success Rate</p>
-                                        <p className="text-2xl font-bold text-white">{analytics.successRate?.toFixed(1) || 0}%</p>
+                                        <p className="text-2xl font-bold text-white">{analytics.successRate ? (analytics.successRate * 100).toFixed(1) : 0}%</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400">Total Gas Used</p>
-                                        <p className="text-2xl font-bold text-white">{analytics.totalGasUsed || 0} SOMI</p>
+                                        <p className="text-2xl font-bold text-white">{(analytics.totalGasUsed || 0).toLocaleString()} gas</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400">Average Response Time</p>
@@ -500,7 +537,7 @@ export default function AgentDetailPage() {
                                             <div className="flex items-center gap-2 mb-1">
                                                 <p className="text-white font-medium font-mono">{tx.functionName || 'Unknown'}</p>
                                                 <span className="text-sm text-gray-400">•</span>
-                                                <p className="text-sm text-gray-400">{tx.value || '0'} SOMI</p>
+                                                <p className="text-sm text-gray-400">Gas: {(tx.gasUsed || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="flex items-center gap-3 text-sm text-gray-500">
                                                 <span className="font-mono">{tx.userAddress?.slice(0, 10) || 'N/A'}...</span>
@@ -535,6 +572,82 @@ export default function AgentDetailPage() {
                     </div>
                 </div>
             )}
+
+            {/* Edit Agent Modal */}
+            <AnimatePresence>
+                {showEditModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowEditModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 max-w-lg w-full"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-white">Edit Agent</h2>
+                                <button
+                                    onClick={() => setShowEditModal(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                                >
+                                    <XCircle className="w-5 h-5 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleUpdateAgent} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Agent Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                        placeholder="Enter agent name"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Description (Optional)
+                                    </label>
+                                    <textarea
+                                        value={editForm.description}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                        placeholder="Enter agent description"
+                                        rows={4}
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-3 pt-4">
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all"
+                                    >
+                                        Save Changes
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEditModal(false)}
+                                        className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-lg font-semibold hover:bg-white/10 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -30,6 +30,8 @@ import { useToast } from '@/hooks/useToast';
 import type { Agent, ChatMessage as APIChatMessage } from '@/types';
 import ReactMarkdown from 'react-markdown';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 type MessageType = 'user' | 'agent' | 'system';
 type MessageStatus = 'sending' | 'sent' | 'error';
 
@@ -346,133 +348,132 @@ export default function ChatPage() {
     };
 
     const handleExecuteTransaction = async () => {
-        if (!pendingTransaction || !address) return;
+        if (!pendingTransaction || !address || !walletClient) {
+            toast.error('Wallet not connected');
+            return;
+        }
 
         try {
-            const useMock = (process.env.NEXT_PUBLIC_USE_MOCK || '0') === '1';
+            // Show pending state
+            const pendingMessage: Message = {
+                id: Date.now().toString(),
+                type: 'system',
+                content: '🔐 Requesting wallet signature...',
+                timestamp: new Date(),
+                status: 'sent',
+            };
+            setMessages((prev) => [...prev, pendingMessage]);
 
-            if (useMock && walletClient) {
-                // In mock mode, trigger a REAL wallet transaction to show the wallet popup
-                // The transaction will use mock data but the wallet interaction is real
+            try {
+                // Send transaction via wallet - this will open MetaMask/WalletConnect popup
+                const hash = await walletClient.sendTransaction({
+                    account: address as `0x${string}`,
+                    to: pendingTransaction.to as `0x${string}`,
+                    data: pendingTransaction.data as `0x${string}`,
+                    value: BigInt(pendingTransaction.value || '0'),
+                });
 
-                // Show pending state immediately
-                const pendingMessage: Message = {
+                // Remove pending message
+                setMessages((prev) => prev.filter(msg => !msg.content.includes('Requesting wallet signature')));
+
+                setShowTransactionPreview(false);
+                const functionName = pendingTransaction.functionName;
+                const targetAddress = pendingTransaction.to;
+                setPendingTransaction(null);
+
+                // Show initial success message
+                const initialMessage: Message = {
                     id: Date.now().toString(),
                     type: 'system',
-                    content: 'Requesting wallet signature...',
+                    content: `✅ Transaction submitted! Waiting for confirmation...\n\n**Hash:** \`${hash}\``,
                     timestamp: new Date(),
                     status: 'sent',
                 };
-                setMessages((prev) => [...prev, pendingMessage]);
+                setMessages((prev) => [...prev, initialMessage]);
+                toast.success('Transaction submitted!');
 
+                // Report transaction to backend for AI-generated receipt
                 try {
-                    // Trigger real wallet transaction - this will open MetaMask/WalletConnect popup
-                    const hash = await walletClient.sendTransaction({
-                        account: address as `0x${string}`,
-                        to: pendingTransaction.to as `0x${string}`,
-                        data: pendingTransaction.data as `0x${string}`,
-                        value: BigInt(pendingTransaction.value || '0'),
-                        // Note: In mock mode, this will likely fail due to invalid contract/data
-                        // but it will still show the wallet popup first
+                    const resultResponse = await fetch(`${API_BASE_URL}/api/v1/chat/transaction-result`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            agentId: selectedAgent.id,
+                            txHash: hash,
+                            userAddress: address,
+                            functionName: functionName,
+                            targetAddress: targetAddress,
+                        }),
                     });
 
-                    // If transaction somehow succeeds (shouldn't in mock mode)
-                    // Remove pending message and add success message
-                    setMessages((prev) => prev.filter(msg => !msg.content.includes('Requesting wallet signature')));
+                    if (resultResponse.ok) {
+                        const result = await resultResponse.json();
 
+                        // Remove initial message
+                        setMessages((prev) => prev.filter(msg => !msg.content.includes('Waiting for confirmation')));
+
+                        // Add AI-generated receipt
+                        const receiptMessage: Message = {
+                            id: Date.now().toString(),
+                            type: 'agent',
+                            content: result.response,
+                            timestamp: new Date(),
+                            status: 'sent',
+                        };
+                        setMessages((prev) => [...prev, receiptMessage]);
+                    } else {
+                        console.error('Failed to get transaction result from backend');
+                    }
+                } catch (backendError) {
+                    console.error('Error reporting transaction to backend:', backendError);
+                    // Keep the initial success message if backend fails
+                }
+
+            } catch (walletError: any) {
+                console.error('Wallet error:', walletError);
+
+                // Remove pending message
+                setMessages((prev) => prev.filter(msg => !msg.content.includes('Requesting wallet signature')));
+
+                // Check for user rejection
+                const isUserRejection =
+                    walletError.code === 4001 ||
+                    walletError.code === 'ACTION_REJECTED' ||
+                    walletError.message?.toLowerCase().includes('user rejected') ||
+                    walletError.message?.toLowerCase().includes('user denied') ||
+                    walletError.message?.toLowerCase().includes('user cancelled') ||
+                    walletError.shortMessage?.toLowerCase().includes('rejected');
+
+                if (isUserRejection) {
                     setShowTransactionPreview(false);
                     setPendingTransaction(null);
 
-                    const successMessage: Message = {
+                    const rejectedMessage: Message = {
                         id: Date.now().toString(),
                         type: 'system',
-                        content: `**Transaction confirmed!**\n\n**Transaction Hash:** ${hash}\n**Status:** Confirmed\n\nYour transaction has been processed.`,
+                        content: '❌ Transaction rejected by user.',
                         timestamp: new Date(),
                         status: 'sent',
                     };
-                    setMessages((prev) => [...prev, successMessage]);
-                    toast.success('Transaction executed successfully!');
+                    setMessages((prev) => [...prev, rejectedMessage]);
+                    toast.error('Transaction rejected');
+                } else {
+                    // Transaction failed
+                    setShowTransactionPreview(false);
+                    setPendingTransaction(null);
 
-                } catch (walletError: any) {
-                    // This is expected in mock mode - wallet will reject invalid transaction
-                    // But the user will have seen the real wallet popup!
-
-                    console.log('Wallet error:', walletError);
-                    console.log('Error code:', walletError.code);
-                    console.log('Error message:', walletError.message);
-
-                    // Remove pending message first
-                    setMessages((prev) => prev.filter(msg => !msg.content.includes('Requesting wallet signature')));
-
-                    // Check for user rejection - various ways wallets signal this
-                    const isUserRejection =
-                        walletError.code === 4001 ||
-                        walletError.code === 'ACTION_REJECTED' ||
-                        walletError.message?.toLowerCase().includes('user rejected') ||
-                        walletError.message?.toLowerCase().includes('user denied') ||
-                        walletError.message?.toLowerCase().includes('user cancelled') ||
-                        walletError.shortMessage?.toLowerCase().includes('rejected');
-
-                    if (isUserRejection) {
-                        // User explicitly rejected in wallet
-                        setShowTransactionPreview(false);
-                        setPendingTransaction(null);
-
-                        const rejectedMessage: Message = {
-                            id: Date.now().toString(),
-                            type: 'system',
-                            content: 'Transaction rejected by user.',
-                            timestamp: new Date(),
-                            status: 'sent',
-                        };
-                        setMessages((prev) => [...prev, rejectedMessage]);
-                        toast.error('Transaction rejected by user');
-                    } else {
-                        // Transaction failed (expected in mock mode with fake data)
-                        // Still show success for demo purposes since wallet popup appeared
-                        console.log('Mock transaction failed as expected:', walletError);
-
-                        setShowTransactionPreview(false);
-                        setPendingTransaction(null);
-
-                        // Simulate successful execution for demo
-                        const result = await apiClient.executeTransaction(
-                            selectedAgent!.id,
-                            pendingTransaction,
-                            address
-                        );
-
-                        const successMessage: Message = {
-                            id: Date.now().toString(),
-                            type: 'system',
-                            content: `**Transaction confirmed!** (Demo Mode)\n\n**Transaction Hash:** ${result.txHash || '0xdemo...'}\n**Status:** Simulated Success\n**Block:** ${result.blockNumber || Math.floor(Math.random() * 1000000)}\n\n*Note: This was a demo transaction. The wallet popup was real, but execution was simulated.*`,
-                            timestamp: new Date(),
-                            status: 'sent',
-                        };
-                        setMessages((prev) => [...prev, successMessage]);
-                        toast.success('Demo transaction completed!');
-                    }
+                    const errorMessage: Message = {
+                        id: Date.now().toString(),
+                        type: 'system',
+                        content: `❌ **Transaction failed**\n\n${walletError.message || 'Unknown error'}\n\nPlease try again or check your wallet.`,
+                        timestamp: new Date(),
+                        status: 'sent',
+                    };
+                    setMessages((prev) => [...prev, errorMessage]);
+                    toast.error('Transaction failed');
                 }
-            } else {
-                // Non-mock mode or no wallet client - fallback to API only
-                const result = await apiClient.executeTransaction(
-                    selectedAgent!.id,
-                    pendingTransaction,
-                    address
-                );
-
-                setShowTransactionPreview(false);
-                setPendingTransaction(null);
-
-                const successMessage: Message = {
-                    id: Date.now().toString(),
-                    type: 'system',
-                    content: `**Transaction submitted successfully!**${result.txHash ? `\n\n**Hash:** ${result.txHash.slice(0, 10)}...` : ''}`,
-                    timestamp: new Date(),
-                    status: 'sent',
-                };
-                setMessages((prev) => [...prev, successMessage]);
-                toast.success('Transaction executed successfully!');
             }
         } catch (error: any) {
             console.error('Error executing transaction:', error);
@@ -484,7 +485,7 @@ export default function ChatPage() {
             const errorMessage: Message = {
                 id: Date.now().toString(),
                 type: 'system',
-                content: `Transaction failed: ${error.message || 'Unknown error'}`,
+                content: `❌ Transaction failed: ${error.message || 'Unknown error'}`,
                 timestamp: new Date(),
                 status: 'sent',
             };

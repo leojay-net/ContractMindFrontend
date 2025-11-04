@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp,
     TrendingDown,
@@ -24,6 +24,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Loader2,
+    Clock,
+    ExternalLink,
 } from 'lucide-react';
 import {
     LineChart as RechartsLine,
@@ -158,6 +160,8 @@ export default function AnalyticsPage() {
     const toast = useToast();
     const [dateRange, setDateRange] = useState('30d');
     const [showFilters, setShowFilters] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+    const [showTxModal, setShowTxModal] = useState(false);
 
     const [analytics, setAnalytics] = useState<any>(null);
     const [agents, setAgents] = useState<Agent[]>([]);
@@ -191,7 +195,7 @@ export default function AnalyticsPage() {
     const stats = analytics ? [
         {
             label: 'Total Calls',
-            value: analytics.totalCalls?.toLocaleString() || '0',
+            value: analytics.totalTransactions?.toLocaleString() || '0',
             change: '+18%',
             trend: 'up' as const,
             icon: Activity,
@@ -199,7 +203,7 @@ export default function AnalyticsPage() {
         },
         {
             label: 'Success Rate',
-            value: `${analytics.successRate?.toFixed(1) || '0'}%`,
+            value: `${analytics.successRate ? (analytics.successRate * 100).toFixed(1) : '0'}%`,
             change: '+2.1%',
             trend: 'up' as const,
             icon: CheckCircle,
@@ -207,15 +211,15 @@ export default function AnalyticsPage() {
         },
         {
             label: 'Total Gas Used',
-            value: `${analytics.totalGasUsed || '0'} SOMI`,
-            change: '-5%',
-            trend: 'down' as const,
+            value: `${(analytics.totalGasUsed || 0).toLocaleString()}`,
+            change: 'gas units',
+            trend: 'up' as const,
             icon: Zap,
             color: 'yellow',
         },
         {
             label: 'Active Agents',
-            value: agents.filter(a => a.active).length.toString(),
+            value: (analytics.totalAgents || agents.filter(a => a.active).length).toString(),
             change: `${agents.length} total`,
             trend: 'up' as const,
             icon: Users,
@@ -232,8 +236,8 @@ export default function AnalyticsPage() {
             id: agent.id,
             name: agent.name,
             calls: agent.analytics?.totalCalls || 0,
-            successRate: agent.analytics?.successRate || 0,
-            gasUsed: `${agent.analytics?.totalGasUsed || 0} SOMI`,
+            successRate: ((agent.analytics?.successRate || 0) * 100).toFixed(1),
+            gasUsed: `${(agent.analytics?.totalGasUsed || 0).toLocaleString()}`,
             trend: 'up' as const,
             change: 0,
         }));
@@ -522,7 +526,11 @@ export default function AnalyticsPage() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+                                onClick={() => {
+                                    setSelectedTransaction(tx);
+                                    setShowTxModal(true);
+                                }}
+                                className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
                             >
                                 <div className="flex items-center gap-4">
                                     <div
@@ -544,7 +552,11 @@ export default function AnalyticsPage() {
                                         <div className="flex items-center gap-2 text-sm text-gray-400">
                                             <span className="font-mono">{tx.userAddress?.slice(0, 10)}...</span>
                                             <span>•</span>
-                                            <span>{new Date(tx.createdAt).toLocaleString()}</span>
+                                            <span>
+                                                {tx.createdAt
+                                                    ? new Date(tx.createdAt).toLocaleString()
+                                                    : 'Unknown date'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -567,6 +579,157 @@ export default function AnalyticsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Transaction Detail Modal */}
+            <AnimatePresence>
+                {showTxModal && selectedTransaction && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowTxModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-white">Transaction Details</h2>
+                                <button
+                                    onClick={() => setShowTxModal(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <XCircle className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="mb-6">
+                                <span
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${selectedTransaction.status === 'completed' || selectedTransaction.status === 'success'
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : selectedTransaction.status === 'failed'
+                                                ? 'bg-red-500/20 text-red-400'
+                                                : 'bg-yellow-500/20 text-yellow-400'
+                                        }`}
+                                >
+                                    {selectedTransaction.status === 'completed' || selectedTransaction.status === 'success' ? (
+                                        <CheckCircle className="w-4 h-4" />
+                                    ) : selectedTransaction.status === 'failed' ? (
+                                        <XCircle className="w-4 h-4" />
+                                    ) : (
+                                        <Clock className="w-4 h-4" />
+                                    )}
+                                    {selectedTransaction.status.charAt(0).toUpperCase() + selectedTransaction.status.slice(1)}
+                                </span>
+                            </div>
+
+                            {/* Transaction Info */}
+                            <div className="space-y-4">
+                                {/* Transaction Hash */}
+                                <div className="p-4 bg-white/5 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-sm text-gray-400">Transaction Hash</label>
+                                        <a
+                                            href={`https://explorer.somnia.network/tx/${selectedTransaction.txHash}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                                        >
+                                            View on Explorer
+                                            <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                    </div>
+                                    <p className="text-white font-mono text-sm break-all">
+                                        {selectedTransaction.txHash}
+                                    </p>
+                                </div>
+
+                                {/* Function Name */}
+                                <div className="p-4 bg-white/5 rounded-lg">
+                                    <label className="text-sm text-gray-400 block mb-2">Function</label>
+                                    <p className="text-white font-medium">
+                                        {selectedTransaction.functionName || 'N/A'}
+                                    </p>
+                                </div>
+
+                                {/* User Address */}
+                                <div className="p-4 bg-white/5 rounded-lg">
+                                    <label className="text-sm text-gray-400 block mb-2">User Address</label>
+                                    <p className="text-white font-mono text-sm break-all">
+                                        {selectedTransaction.userAddress}
+                                    </p>
+                                </div>
+
+                                {/* Block Number */}
+                                {selectedTransaction.blockNumber && (
+                                    <div className="p-4 bg-white/5 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Block Number</label>
+                                        <p className="text-white font-medium">
+                                            {selectedTransaction.blockNumber.toLocaleString()}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Gas Used */}
+                                {selectedTransaction.gasUsed && (
+                                    <div className="p-4 bg-white/5 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Gas Used</label>
+                                        <p className="text-white font-medium">
+                                            {selectedTransaction.gasUsed.toLocaleString()} gas units
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Timestamps */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-white/5 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Created At</label>
+                                        <p className="text-white text-sm">
+                                            {selectedTransaction.createdAt
+                                                ? new Date(selectedTransaction.createdAt).toLocaleString()
+                                                : 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Confirmed At</label>
+                                        <p className="text-white text-sm">
+                                            {selectedTransaction.confirmedAt
+                                                ? new Date(selectedTransaction.confirmedAt).toLocaleString()
+                                                : 'Pending'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Agent ID */}
+                                {selectedTransaction.agentId && (
+                                    <div className="p-4 bg-white/5 rounded-lg">
+                                        <label className="text-sm text-gray-400 block mb-2">Agent ID</label>
+                                        <p className="text-white font-mono text-sm">
+                                            {selectedTransaction.agentId}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Close Button */}
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    onClick={() => setShowTxModal(false)}
+                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

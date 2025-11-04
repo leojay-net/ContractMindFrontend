@@ -57,8 +57,9 @@ class ApiClient {
     }
 
     // Agent Management
-    async getAgents(): Promise<Agent[]> {
-        const response = await this.request<{ agents: Agent[]; total: number }>('/api/v1/agents');
+    async getAgents(owner?: string): Promise<Agent[]> {
+        const params = owner ? `?owner=${owner}` : '';
+        const response = await this.request<{ agents: Agent[]; total: number }>(`/api/v1/agents${params}`);
         return response.agents;
     }
 
@@ -116,8 +117,8 @@ class ApiClient {
         throw new Error('Direct agent creation not supported. Use prepareAgentRegistration + wallet signing + confirmAgentRegistration flow');
     }
 
-    async updateAgent(id: string, data: Partial<Agent>): Promise<Agent> {
-        return this.request<Agent>(`/api/v1/agents/${id}`, {
+    async updateAgent(id: string, data: { name?: string; description?: string }): Promise<void> {
+        return this.request<void>(`/api/v1/agents/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         });
@@ -129,10 +130,11 @@ class ApiClient {
         });
     }
 
-    async toggleAgentStatus(id: string, status: 'active' | 'inactive'): Promise<Agent> {
-        return this.request<Agent>(`/api/v1/agents/${id}/status`, {
+    async toggleAgentStatus(id: string, status: 'active' | 'inactive'): Promise<void> {
+        const active = status === 'active';
+        return this.request<void>(`/api/v1/agents/${id}/status`, {
             method: 'PATCH',
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({ active }),
         });
     }
 
@@ -159,7 +161,7 @@ class ApiClient {
     }> {
         return this.request('/api/v1/chat', {
             method: 'POST',
-            body: JSON.stringify({ agent_id: agentId, message, user_address: userAddress }),
+            body: JSON.stringify({ agentId, message, userAddress }),
         });
     }
 
@@ -437,10 +439,10 @@ class MockApiClient {
     }> {
         if (USE_REAL_CHAT && API_BASE_URL) {
             // forward to the real backend chat endpoint
-            const res = await fetch(`${API_BASE_URL}/api/chat`, {
+            const res = await fetch(`${API_BASE_URL}/api/v1/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent_id: agentId, message, user_address: userAddress }),
+                body: JSON.stringify({ agentId, message, userAddress }),
             });
             if (!res.ok) throw new Error('Real chat call failed');
             return res.json();
