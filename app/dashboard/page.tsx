@@ -56,7 +56,7 @@ export default function DashboardPage() {
                 setStats([
                     {
                         label: 'Total Agents',
-                        value: analytics.totalAgents?.toString() || '0',
+                        value: analytics.totalAgents?.toString() || agents.length.toString() || '0',
                         change: `+${analytics.newAgentsThisWeek || 0} this week`,
                         icon: Bot,
                         trend: 'up' as const
@@ -84,8 +84,8 @@ export default function DashboardPage() {
                     },
                 ]);
 
-                // Update recent agents (top 3 most active)
-                const sortedAgents = agents
+                // Update recent agents (top 3 most active) - agents is already an array
+                const sortedAgents = (Array.isArray(agents) ? agents : [])
                     .filter((a: any) => a.active)
                     .sort((a: any, b: any) => (b.analytics?.totalCalls || 0) - (a.analytics?.totalCalls || 0))
                     .slice(0, 3);
@@ -95,17 +95,17 @@ export default function DashboardPage() {
                     name: agent.name,
                     status: agent.active ? 'active' : 'inactive',
                     interactions: agent.analytics?.totalCalls || 0,
-                    lastActive: agent.updatedAt || 'Unknown',
+                    lastActive: agent.updatedAt || agent.createdAt || 'Unknown',
                 })));
 
                 // Update recent transactions
-                setRecentTransactions(transactions.slice(0, 3).map((tx: any) => ({
-                    id: tx.hash,
-                    type: tx.functionName,
-                    agent: tx.agentId,
+                setRecentTransactions((Array.isArray(transactions) ? transactions : []).slice(0, 3).map((tx: any) => ({
+                    id: tx.hash || tx.id || `tx-${crypto.randomUUID()}`,
+                    type: tx.functionName || tx.type || 'Transaction',
+                    agent: tx.agentId || tx.agent || 'Unknown',
                     status: tx.success ? 'success' : 'failed',
-                    hash: tx.hash,
-                    time: tx.timestamp,
+                    hash: tx.hash || tx.txHash || `0x${Math.random().toString(16).slice(2)}`,
+                    time: tx.timestamp || new Date().toISOString(),
                 })));
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
@@ -244,10 +244,10 @@ export default function DashboardPage() {
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tx.status === 'success'
-                                            ? 'bg-green-500/20'
-                                            : tx.status === 'pending'
-                                                ? 'bg-yellow-500/20'
-                                                : 'bg-red-500/20'
+                                        ? 'bg-green-500/20'
+                                        : tx.status === 'pending'
+                                            ? 'bg-yellow-500/20'
+                                            : 'bg-red-500/20'
                                         }`}>
                                         {tx.status === 'success' ? (
                                             <CheckCircle className="w-5 h-5 text-green-400" />

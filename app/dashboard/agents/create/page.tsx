@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Upload,
@@ -18,11 +18,13 @@ import {
     Code,
     Settings,
     Sparkles,
+    Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/useToast';
+import { parseEther } from 'viem';
 
 type Step = 1 | 2 | 3;
 
@@ -30,9 +32,14 @@ export default function CreateAgentPage() {
     const router = useRouter();
     const { address } = useAccount();
     const toast = useToast();
+    const { sendTransaction, data: txHash, isPending: isSending } = useSendTransaction();
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+        hash: txHash,
+    });
 
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pendingTxData, setPendingTxData] = useState<any>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -114,23 +121,83 @@ export default function CreateAgentPage() {
         try {
             const abiJson = JSON.parse(formData.abi);
 
-            await apiClient.createAgent({
+            // TODO: Upload ABI to IPFS and get hash
+            // For now, use a placeholder IPFS hash
+            const configIPFS = `ipfs://placeholder-${Date.now()}`;
+
+            // Parse ABI JSON
+            let parsedAbi = null;
+            try {
+                parsedAbi = JSON.parse(formData.abi);
+            } catch (error) {
+                throw new Error('Invalid ABI JSON format');
+            }
+
+            toast.info('Preparing transaction...');
+
+            // Step 1: Prepare the registration transaction
+            const prepareResult = await apiClient.prepareAgentRegistration({
+                ownerAddress: address,
                 targetContract: formData.targetContract,
                 name: formData.name,
-                abi: abiJson,
-                personality: formData.personality,
-                domainKnowledge: formData.domainKnowledge || undefined,
-                description: formData.description || undefined,
+                configIPFS,
+                abi: parsedAbi,
             });
 
-            toast.success('Agent created successfully!');
-            router.push('/dashboard/agents');
+            if (!prepareResult.success || !prepareResult.requiresTransaction) {
+                throw new Error('Failed to prepare transaction');
+            }
+
+            const tx = prepareResult.transaction;
+            setPendingTxData({ tx, configIPFS, abi: parsedAbi });
+
+            toast.info('Please sign the transaction in your wallet...');
+
+            // Step 2: Send transaction via wallet
+            sendTransaction({
+                to: tx.to as `0x${string}`,
+                data: tx.data as `0x${string}`,
+                value: BigInt(tx.value || '0'),
+                gas: BigInt(tx.gasEstimate),
+            });
+
         } catch (error: any) {
             console.error('Error creating agent:', error);
             toast.error(error.message || 'Failed to create agent. Please try again.');
             setErrors({ submit: error.message || 'Failed to create agent. Please try again.' });
+            setIsSubmitting(false);
+        }
+    };
+
+    // Watch for transaction confirmation
+    useEffect(() => {
+        if (isConfirmed && txHash && pendingTxData) {
+            confirmRegistration(txHash);
+        }
+    }, [isConfirmed, txHash, pendingTxData]);
+
+    const confirmRegistration = async (hash: `0x${string}`) => {
+        try {
+            toast.info('Confirming registration on backend...');
+
+            // Step 3: Confirm with backend, passing the ABI
+            const confirmResult = await apiClient.confirmAgentRegistration(
+                hash,
+                pendingTxData?.abi
+            );
+
+            if (!confirmResult.success) {
+                throw new Error(confirmResult.error || 'Failed to confirm registration');
+            }
+
+            toast.success('Agent registered successfully!');
+            router.push('/dashboard/agents');
+        } catch (error: any) {
+            console.error('Error confirming agent:', error);
+            toast.error(error.message || 'Failed to confirm agent registration.');
         } finally {
             setIsSubmitting(false);
+            setPendingTxData(null);
         }
     };
 
@@ -156,10 +223,10 @@ export default function CreateAgentPage() {
                             <div className="flex items-center gap-3">
                                 <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${currentStep === step.number
-                                            ? 'bg-white text-black'
-                                            : currentStep > step.number
-                                                ? 'bg-green-500 text-white'
-                                                : 'bg-white/10 text-gray-500'
+                                        ? 'bg-white text-black'
+                                        : currentStep > step.number
+                                            ? 'bg-green-500 text-white'
+                                            : 'bg-white/10 text-gray-500'
                                         }`}
                                 >
                                     {currentStep > step.number ? (
@@ -454,13 +521,23 @@ export default function CreateAgentPage() {
                     ) : (
                         <button
                             onClick={handleSubmit}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isSending || isConfirming}
                             className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
-                            {isSubmitting ? (
+                            {isSending ? (
                                 <>
-                                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                                    Deploying...
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Waiting for signature...
+                                </>
+                            ) : isConfirming ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Confirming transaction...
+                                </>
+                            ) : isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Preparing...
                                 </>
                             ) : (
                                 <>

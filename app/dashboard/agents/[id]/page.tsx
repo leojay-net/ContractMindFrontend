@@ -181,8 +181,8 @@ export default function AgentDetailPage() {
                             <Bot className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white mb-2">{agent.name}</h1>
-                            <p className="text-gray-400 mb-3">Agent for contract {agent.targetContract.slice(0, 10)}...</p>
+                            <h1 className="text-3xl font-bold text-white mb-2">{agent.name || 'Unknown Agent'}</h1>
+                            <p className="text-gray-400 mb-3">Agent for contract {agent.targetContract?.slice(0, 10) || 'N/A'}...</p>
                             <div className="flex items-center gap-3 flex-wrap">
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-semibold ${agent.active
@@ -503,7 +503,7 @@ export default function AgentDetailPage() {
                                                 <p className="text-sm text-gray-400">{tx.value || '0'} SOMI</p>
                                             </div>
                                             <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                <span className="font-mono">{tx.userAddress?.slice(0, 10)}...</span>
+                                                <span className="font-mono">{tx.userAddress?.slice(0, 10) || 'N/A'}...</span>
                                                 <span>•</span>
                                                 <span>{new Date(tx.createdAt).toLocaleString()}</span>
                                             </div>

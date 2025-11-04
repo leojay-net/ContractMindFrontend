@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bot,
@@ -22,55 +22,38 @@ import {
   Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api';
+import { useAgents } from '@/hooks/useAgents';
 import { useToast } from '@/hooks/useToast';
 import type { Agent } from '@/types';
 
 export default function AgentsPage() {
   const toast = useToast();
-  
+  const { agents, loading: isLoading, error, refetch } = useAgents();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'calls' | 'success'>('recent');
-  const [agents, setAgents] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    totalCalls: 0,
-    avgSuccessRate: 0,
-  });
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        setIsLoading(true);
-        const data = await apiClient.getAgents();
-        setAgents(data);
+  // Calculate stats from agents data
+  const stats = useMemo(() => {
+    const activeCount = agents.filter((a: Agent) => a.active).length;
+    const totalCalls = agents.reduce((sum: number, a: any) => sum + (a.analytics?.totalCalls || 0), 0);
+    const avgSuccess = agents.length > 0
+      ? agents.reduce((sum: number, a: any) => sum + (a.analytics?.successRate || 0), 0) / agents.length
+      : 0;
 
-        // Calculate stats
-        const activeCount = data.filter((a: Agent) => a.active).length;
-        const totalCalls = data.reduce((sum: number, a: any) => sum + (a.analytics?.totalCalls || 0), 0);
-        const avgSuccess = data.length > 0
-          ? data.reduce((sum: number, a: any) => sum + (a.analytics?.successRate || 0), 0) / data.length
-          : 0;
-
-        setStats({
-          total: data.length,
-          active: activeCount,
-          totalCalls,
-          avgSuccessRate: Number(avgSuccess.toFixed(1)),
-        });
-      } catch (error) {
-        console.error('Failed to fetch agents:', error);
-        toast.error('Failed to load agents');
-      } finally {
-        setIsLoading(false);
-      }
+    return {
+      total: agents.length,
+      active: activeCount,
+      totalCalls,
+      avgSuccessRate: Number(avgSuccess.toFixed(1)),
     };
+  }, [agents]);
 
-    fetchAgents();
-  }, [toast]);
+  // Show error toast if fetch failed
+  if (error) {
+    toast.error('Failed to load agents');
+  }
 
   // Filter and sort agents
   const filteredAgents = agents
@@ -79,7 +62,7 @@ export default function AgentsPage() {
         agent.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         agent.targetContract?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus =
-        statusFilter === 'all' || 
+        statusFilter === 'all' ||
         (statusFilter === 'active' && agent.active) ||
         (statusFilter === 'inactive' && !agent.active);
       return matchesSearch && matchesStatus;
@@ -228,11 +211,10 @@ export default function AgentsPage() {
                       {agent.name}
                     </Link>
                     <span
-                      className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        agent.active
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-gray-500/20 text-gray-400'
-                      }`}
+                      className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${agent.active
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-gray-500/20 text-gray-400'
+                        }`}
                     >
                       {agent.active ? '● Active' : '● Inactive'}
                     </span>
@@ -242,7 +224,7 @@ export default function AgentsPage() {
 
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1">Contract Address</p>
-                <p className="text-sm text-gray-400 font-mono truncate">{agent.targetContract}</p>
+                <p className="text-sm text-gray-400 font-mono truncate">{agent.targetContract || 'N/A'}</p>
               </div>
 
               <div className="flex items-center gap-4 mb-4 text-xs text-gray-500">

@@ -5,10 +5,11 @@
  */
 
 import { Agent, ChatMessage, PreparedTransaction, ExecutionResult } from '@/types';
+import { API_CONFIG, MOCK_CONFIG } from './config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const USE_MOCK = (process.env.NEXT_PUBLIC_USE_MOCK || '0') === '1' || (process.env.NEXT_PUBLIC_USE_MOCK || 'false') === 'true';
-const USE_REAL_CHAT = (process.env.NEXT_PUBLIC_USE_REAL_CHAT || '0') === '1' || (process.env.NEXT_PUBLIC_USE_REAL_CHAT || 'false') === 'true';
+const API_BASE_URL = API_CONFIG.BASE_URL;
+const USE_MOCK = MOCK_CONFIG.USE_MOCK;
+const USE_REAL_CHAT = MOCK_CONFIG.USE_REAL_CHAT;
 
 function safeParseJSON<T = any>(s: string | undefined, fallback: T): T {
     if (!s) return fallback;
@@ -57,13 +58,52 @@ class ApiClient {
 
     // Agent Management
     async getAgents(): Promise<Agent[]> {
-        return this.request<Agent[]>('/api/agents');
+        const response = await this.request<{ agents: Agent[]; total: number }>('/api/v1/agents');
+        return response.agents;
     }
 
     async getAgent(id: string): Promise<Agent> {
-        return this.request<Agent>(`/api/agents/${id}`);
+        return this.request<Agent>(`/api/v1/agents/${id}`);
     }
 
+    async prepareAgentRegistration(data: {
+        ownerAddress: string;
+        targetContract: string;
+        name: string;
+        configIPFS: string;
+    }): Promise<{
+        success: boolean;
+        requiresTransaction: boolean;
+        transaction: {
+            to: string;
+            data: string;
+            value: string;
+            gasEstimate: string;
+            explanation: string;
+            functionName: string;
+            warnings?: string[];
+        };
+    }> {
+        return this.request('/api/v1/agents/register', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async confirmAgentRegistration(txHash: string, abi?: any[]): Promise<{
+        success: boolean;
+        agentId?: string;
+        txHash: string;
+        agent?: any;
+        error?: string;
+    }> {
+        return this.request('/api/v1/agents/confirm', {
+            method: 'POST',
+            body: JSON.stringify({ txHash, abi }),
+        });
+    }
+
+    // Legacy method - kept for backward compatibility but should use prepare/confirm flow
     async createAgent(data: {
         name: string;
         description?: string;
@@ -72,27 +112,25 @@ class ApiClient {
         personality: string;
         domainKnowledge?: string;
     }): Promise<Agent> {
-        return this.request<Agent>('/api/agents', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
+        // This should not be used anymore - use prepareAgentRegistration + confirmAgentRegistration
+        throw new Error('Direct agent creation not supported. Use prepareAgentRegistration + wallet signing + confirmAgentRegistration flow');
     }
 
     async updateAgent(id: string, data: Partial<Agent>): Promise<Agent> {
-        return this.request<Agent>(`/api/agents/${id}`, {
+        return this.request<Agent>(`/api/v1/agents/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         });
     }
 
     async deleteAgent(id: string): Promise<void> {
-        return this.request<void>(`/api/agents/${id}`, {
+        return this.request<void>(`/api/v1/agents/${id}`, {
             method: 'DELETE',
         });
     }
 
     async toggleAgentStatus(id: string, status: 'active' | 'inactive'): Promise<Agent> {
-        return this.request<Agent>(`/api/agents/${id}/status`, {
+        return this.request<Agent>(`/api/v1/agents/${id}/status`, {
             method: 'PATCH',
             body: JSON.stringify({ status }),
         });
@@ -100,14 +138,14 @@ class ApiClient {
 
     // Function Authorization
     async authorizeFunctions(agentId: string, functions: string[]): Promise<void> {
-        return this.request<void>(`/api/agents/${agentId}/authorize`, {
+        return this.request<void>(`/api/v1/agents/${agentId}/authorize`, {
             method: 'POST',
             body: JSON.stringify({ functions }),
         });
     }
 
     async revokeFunctions(agentId: string, functions: string[]): Promise<void> {
-        return this.request<void>(`/api/agents/${agentId}/revoke`, {
+        return this.request<void>(`/api/v1/agents/${agentId}/revoke`, {
             method: 'POST',
             body: JSON.stringify({ functions }),
         });
@@ -119,19 +157,19 @@ class ApiClient {
         isPreparedTransaction: boolean;
         preparedTransaction?: PreparedTransaction;
     }> {
-        return this.request('/api/chat', {
+        return this.request('/api/v1/chat', {
             method: 'POST',
             body: JSON.stringify({ agent_id: agentId, message, user_address: userAddress }),
         });
     }
 
     async getChatHistory(agentId: string, userAddress: string): Promise<ChatMessage[]> {
-        return this.request<ChatMessage[]>(`/api/chat/history?agent_id=${agentId}&user_address=${userAddress}`);
+        return this.request<ChatMessage[]>(`/api/v1/chat/history?agent_id=${agentId}&user_address=${userAddress}`);
     }
 
     // Transaction Execution
     async executeTransaction(agentId: string, transactionData: PreparedTransaction, userAddress: string): Promise<ExecutionResult> {
-        return this.request<ExecutionResult>('/api/transactions/execute', {
+        return this.request<ExecutionResult>('/api/v1/transactions/execute', {
             method: 'POST',
             body: JSON.stringify({ agent_id: agentId, transaction_data: transactionData, user_address: userAddress }),
         });
@@ -139,13 +177,13 @@ class ApiClient {
 
     // Analytics
     async getAgentAnalytics(agentId: string, timeRange?: string): Promise<any> {
-        const params = timeRange ? `?range=${timeRange}` : '';
-        return this.request(`/api/analytics/agent/${agentId}${params}`);
+        const params = timeRange ? `?days=${timeRange}` : '';
+        return this.request(`/api/v1/analytics/agent/${agentId}${params}`);
     }
 
     async getOverallAnalytics(timeRange?: string): Promise<any> {
-        const params = timeRange ? `?range=${timeRange}` : '';
-        return this.request(`/api/analytics/overview${params}`);
+        const params = timeRange ? `?days=${timeRange}` : '';
+        return this.request(`/api/v1/analytics/global${params}`);
     }
 
     async getTransactionHistory(agentId?: string, limit?: number): Promise<any[]> {
@@ -153,13 +191,14 @@ class ApiClient {
         if (agentId) params.append('agent_id', agentId);
         if (limit) params.append('limit', limit.toString());
         const query = params.toString() ? `?${params.toString()}` : '';
-        return this.request(`/api/transactions${query}`);
+        const response = await this.request<{ transactions: any[]; total: number }>(`/api/v1/transactions${query}`);
+        return response.transactions;
     }
 
     // WebSocket connection for real-time updates
     connectWebSocket(agentId: string, userAddress: string): WebSocket {
         const wsUrl = this.baseUrl.replace('http', 'ws');
-        const ws = new WebSocket(`${wsUrl}/ws/chat/${agentId}?user_address=${userAddress}`);
+        const ws = new WebSocket(`${wsUrl}/api/v1/ws/chat/${agentId}?user_address=${userAddress}`);
         return ws;
     }
 }
@@ -260,6 +299,56 @@ class MockApiClient {
         return this.simulateDelay(a);
     }
 
+    async prepareAgentRegistration(data: {
+        ownerAddress: string;
+        targetContract: string;
+        name: string;
+        configIPFS: string;
+    }): Promise<{
+        success: boolean;
+        requiresTransaction: boolean;
+        transaction: any;
+    }> {
+        // Mock: return a fake transaction to sign
+        return this.simulateDelay({
+            success: true,
+            requiresTransaction: true,
+            transaction: {
+                to: '0x318FFd8Fc398a3639Faa837307Ffdd0b9E1017c9', // Mock AgentRegistry address
+                data: '0x' + 'a'.repeat(128), // Mock calldata
+                value: '0',
+                gasEstimate: '500000',
+                explanation: `Register agent '${data.name}'`,
+                functionName: 'registerAgent',
+                warnings: ['Gas fees will apply', 'You will grant your agent configuration on-chain'],
+            },
+        }, 300);
+    }
+
+    async confirmAgentRegistration(txHash: string, abi?: any[]): Promise<{
+        success: boolean;
+        agentId?: string;
+        txHash: string;
+        agent?: any;
+        error?: string;
+    }> {
+        // Mock: simulate successful confirmation
+        const agentId = `mock-agent-${Date.now().toString(36)}`;
+        return this.simulateDelay({
+            success: true,
+            agentId,
+            txHash,
+            agent: {
+                id: agentId,
+                owner: '0x0000000000000000000000000000000000000000',
+                targetContract: '0x0000000000000000000000000000000000000000',
+                name: 'Mock Agent',
+                active: true,
+            },
+        }, 500);
+    }
+
+    // Legacy createAgent - now implemented using the new flow
     async createAgent(data: {
         name: string;
         description?: string;
